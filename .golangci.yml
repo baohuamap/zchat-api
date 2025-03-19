@@ -1,0 +1,11 @@
+linters:
+  presets:
+    - bugs
+    - error
+  disable:
+    - err113
+
+run:
+  allow-parallel-runners: true
+  tests: false
+  timeout: 30m
