@@ -14,8 +14,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"github.com/baohuamap/zchat-api/api"
+	httpserver "github.com/baohuamap/zchat-api/api/http"
+	"github.com/baohuamap/zchat-api/api/ws"
 	"github.com/baohuamap/zchat-api/pkg/gorm"
+	"github.com/baohuamap/zchat-api/repository"
+	"github.com/baohuamap/zchat-api/router"
+	"github.com/baohuamap/zchat-api/service"
 )
 
 func init() {
@@ -44,16 +48,24 @@ func main() {
 		slog.Error("Creating connection to DB: ", slog.String("error", err.Error()))
 	}
 
-	router := gin.Default()
+	r := gin.Default()
 
 	server := &http.Server{
 		Addr:         "0.0.0.0:5050",
-		Handler:      router.Handler(),
+		Handler:      r.Handler(),
 		ReadTimeout:  time.Duration(20) * time.Second,
 		WriteTimeout: time.Duration(20) * time.Second,
 	}
 
-	api.SetupRoutes(router)
+	userRepo := repository.ProvideUserRepository(db.Gormer())
+	u := service.NewUserService(userRepo)
+	httpHandler := httpserver.NewHandler(u)
+
+	hub := ws.NewHub()
+	wsHandler := ws.NewHandler(hub)
+	go hub.Run()
+
+	router.SetupRoutes(r, httpHandler, wsHandler)
 
 	go func() {
 		// service connections
