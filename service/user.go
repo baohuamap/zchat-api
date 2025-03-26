@@ -64,7 +64,7 @@ func (s *service) Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUse
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	u, err := s.repo.GetByEmail(ctx, req.Email)
+	u, err := s.repo.GetByEmail(ctx, req.Phone)
 	if err != nil {
 		return &dto.LoginUserRes{}, err
 	}

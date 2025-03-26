@@ -44,6 +44,7 @@ func main() {
 		" database=", os.Getenv("PG_NAME"),
 		" sslmode=", os.Getenv("PG_SSLMODE"),
 	}, "")
+	
 	if err := db.Connect(dsn); err != nil {
 		slog.Error("Creating connection to DB: ", slog.String("error", err.Error()))
 	}
