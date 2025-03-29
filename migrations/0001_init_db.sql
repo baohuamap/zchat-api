@@ -5,11 +5,13 @@ CREATE TABLE "public"."users" (
     "created_at" timestamptz NULL,
     "updated_at" timestamptz NULL,
     "deleted_at" timestamptz NULL,
-    "email" text NULL,
-    "first" text NULL,
-    "last" text NULL,
-    "username" text NULL,
-    "password" text NULL,
+    "username" text NOT NULL,
+    "password" text NOT NULL,
+    "email" text UNIQUE NOT NULL,
+    "first_name" text NULL,
+    "last_name" text NULL,
+    "avatar" text NULL,
+    "phone" text UNIQUE NOT NULL,
     PRIMARY KEY ("id")
 );
 
@@ -58,4 +60,9 @@ CREATE INDEX "idx_messages_deleted_at" ON "public"."messages" ("deleted_at");
 ---- create above / drop below ----
 
 DROP TABLE users CASCADE;
+
+DROP TABLE chats CASCADE;
+
+DROP TABLE messages CASCADE;
+
 
