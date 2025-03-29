@@ -57,7 +57,7 @@ func main() {
 		WriteTimeout: time.Duration(20) * time.Second,
 	}
 
-	userRepo := repository.ProvideUserRepository(db.Gormer())
+	userRepo := repository.NewUserRepository(db.Gormer())
 	u := service.NewUserService(userRepo)
 	httpHandler := httpserver.NewHandler(u)
 

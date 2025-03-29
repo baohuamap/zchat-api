@@ -42,9 +42,12 @@ func (s *service) CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.Cr
 	}
 
 	u := &models.User{
-		Username: req.Username,
-		Email:    req.Email,
-		Password: hashedPassword,
+		Username:  req.Username,
+		Email:     req.Email,
+		Password:  hashedPassword,
+		Phone:     req.Phone,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
 	}
 
 	if err := s.repo.Create(ctx, *u); err != nil {
@@ -52,9 +55,12 @@ func (s *service) CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.Cr
 	}
 
 	res := &dto.CreateUserRes{
-		ID:       strconv.Itoa(int(u.ID)),
-		Username: u.Username,
-		Email:    u.Email,
+		ID:        strconv.Itoa(int(u.ID)),
+		Username:  u.Username,
+		Email:     u.Email,
+		Phone:     u.Phone,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
 	}
 
 	return res, nil
@@ -64,7 +70,7 @@ func (s *service) Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUse
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	u, err := s.repo.GetByEmail(ctx, req.Email)
+	u, err := s.repo.GetByPhone(ctx, req.Phone)
 	if err != nil {
 		return &dto.LoginUserRes{}, err
 	}
