@@ -13,6 +13,8 @@ type Handler interface {
 	CreateUser(ctx *gin.Context)
 	Login(ctx *gin.Context)
 	Logout(ctx *gin.Context)
+	UploadImage(ctx *gin.Context)
+	GetProfileImage(ctx *gin.Context)
 }
 
 type handler struct {
@@ -66,4 +68,42 @@ func (h *handler) Login(c *gin.Context) {
 func (h *handler) Logout(c *gin.Context) {
 	c.SetCookie("jwt", "", -1, "", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
+}
+
+func (h *handler) UploadImage(c *gin.Context) {
+    file, err := c.FormFile("file")
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file"})
+        return
+    }
+
+    openedFile, err := file.Open()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+        return
+    }
+    defer openedFile.Close()
+
+    // Gọi service để upload ảnh
+    message, err := h.userService.UploadImage(c.Request.Context(), openedFile, file.Filename)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": message})
+}
+
+func (h *handler) GetProfileImage(c *gin.Context) {
+    userID := c.Param("userID")
+
+    // Gọi service để lấy dữ liệu ảnh
+    imageData, err := h.userService.GetProfileImage(c.Request.Context(), userID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Trả về dữ liệu ảnh dưới dạng binary
+    c.Data(http.StatusOK, "image/jpeg", imageData)
 }

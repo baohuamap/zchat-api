@@ -17,6 +17,7 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.POST("/signup", httpHandler.CreateUser)
 	r.POST("/login", httpHandler.Login)
 	r.GET("/logout", httpHandler.Logout)
+	r.GET("/users/:userID/profile-image", httpHandler.GetProfileImage)
 
 	// ws
 	r.POST("/ws/createRoom", wsHandler.CreateRoom)
