@@ -3,12 +3,13 @@ package router
 import (
 	"github.com/baohuamap/zchat-api/api/http"
 	"github.com/baohuamap/zchat-api/api/ws"
+	"github.com/baohuamap/zchat-api/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) {
 
-	// router.Use(middleware.ErrorHandler())
+	r.Use(middleware.CORSMiddleware())
 
 	// health check
 	r.GET("/healthz", httpHandler.ServerStatus)
