@@ -1,5 +1,7 @@
 package dto
 
+import "io"
+
 type CreateUserReq struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
@@ -27,4 +29,13 @@ type LoginUserRes struct {
 	AccessToken string
 	ID          string `json:"id"`
 	Username    string `json:"username"`
+}
+
+type UploadImageReq struct {
+	File     io.Reader `json:"-"`
+	Filename string    `json:"filename"`
+}
+
+type UploadImageRes struct {
+	Message string `json:"message"`
 }

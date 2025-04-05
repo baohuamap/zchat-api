@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"io"
 	"strconv"
 	"time"
 
@@ -20,15 +21,19 @@ const (
 type User interface {
 	CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.CreateUserRes, error)
 	Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUserRes, error)
+	UploadImage(c context.Context, file io.Reader, filename string) (string, error)
+	GetProfileImage(c context.Context, userID string) ([]byte, error)
 }
 
 type service struct {
-	repo repo.UserRepository
+	repo     repo.UserRepository
+	uploader Uploader
 }
 
-func NewUserService(r repo.UserRepository) User {
+func NewUserService(r repo.UserRepository, uploader Uploader) User {
 	return &service{
-		r,
+		repo:     r,
+		uploader: uploader,
 	}
 }
 
@@ -42,12 +47,10 @@ func (s *service) CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.Cr
 	}
 
 	u := &models.User{
-		Username:  req.Username,
-		Email:     req.Email,
-		Password:  hashedPassword,
-		Phone:     req.Phone,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
+
+		Username: req.Username,
+		Email:    req.Email,
+		Password: hashedPassword,
 	}
 
 	if err := s.repo.Create(ctx, *u); err != nil {
@@ -55,12 +58,9 @@ func (s *service) CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.Cr
 	}
 
 	res := &dto.CreateUserRes{
-		ID:        strconv.Itoa(int(u.ID)),
-		Username:  u.Username,
-		Email:     u.Email,
-		Phone:     u.Phone,
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
+		ID:       strconv.Itoa(int(u.ID)),
+		Username: u.Username,
+		Email:    u.Email,
 	}
 
 	return res, nil
@@ -70,7 +70,7 @@ func (s *service) Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUse
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	u, err := s.repo.GetByPhone(ctx, req.Phone)
+	u, err := s.repo.GetByEmail(ctx, req.Phone)
 	if err != nil {
 		return &dto.LoginUserRes{}, err
 	}
@@ -94,4 +94,26 @@ func (s *service) Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUse
 	}
 
 	return &dto.LoginUserRes{AccessToken: ss, Username: u.Username, ID: strconv.Itoa(int(u.ID))}, nil
+}
+
+func (s *service) UploadImage(c context.Context, file io.Reader, filename string) (string, error) {
+	// Sử dụng uploader để đọc file và chuyển thành dữ liệu binary
+	fileData, err := s.uploader.UploadFileToDB(c, file, filename)
+	if err != nil {
+		return "", err
+	}
+
+	// Lưu dữ liệu binary vào cơ sở dữ liệu thông qua repository
+	userID := uint(1) // Ví dụ: userID được lấy từ context hoặc JWT
+	err = s.repo.SaveProfileImageData(c, userID, fileData)
+	if err != nil {
+		return "", err
+	}
+
+	return "Image uploaded successfully", nil
+}
+
+func (s *service) GetProfileImage(c context.Context, userID string) ([]byte, error) {
+	// Gọi repository để lấy dữ liệu ảnh từ cơ sở dữ liệu
+	return s.repo.GetProfileImageData(c, userID)
 }

@@ -58,7 +58,9 @@ func main() {
 	}
 
 	userRepo := repository.NewUserRepository(db.Gormer())
-	u := service.NewUserService(userRepo)
+	uploader := service.NewDBUploader() 
+
+	u := service.NewUserService(userRepo, uploader)
 	httpHandler := httpserver.NewHandler(u)
 
 	hub := ws.NewHub()
