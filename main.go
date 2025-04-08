@@ -58,7 +58,8 @@ func main() {
 	}
 
 	userRepo := repository.NewUserRepository(db.Gormer())
-	u := service.NewUserService(userRepo)
+	friendshipRepo := repository.NewFriendshipRepository(db.Gormer())
+	u := service.NewUserService(userRepo, friendshipRepo)
 	httpHandler := httpserver.NewHandler(u)
 
 	hub := ws.NewHub()
