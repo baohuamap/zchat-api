@@ -2,40 +2,71 @@ package ws
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 
 	"github.com/baohuamap/zchat-api/dto"
+	"github.com/baohuamap/zchat-api/models"
+	"github.com/baohuamap/zchat-api/repository"
 )
 
 type Handler interface {
-	CreateRoom(c *gin.Context)
-	JoinRoom(c *gin.Context)
-	GetRooms(c *gin.Context)
+	CreateConversation(c *gin.Context)
+	JoinConversation(c *gin.Context)
+	GetConversations(c *gin.Context)
 	GetClients(c *gin.Context)
 }
 
 type handler struct {
-	hub *Hub
+	hub         *Hub
+	conv        repository.ConversationRepository
+	participant repository.ParticipantRepository
 }
 
-func NewHandler(h *Hub) Handler {
+func NewHandler(h *Hub, conv repository.ConversationRepository, participant repository.ParticipantRepository) Handler {
 	return &handler{
-		hub: h,
+		hub:         h,
+		conv:        conv,
+		participant: participant,
 	}
 }
 
-func (h *handler) CreateRoom(c *gin.Context) {
-	var req dto.CreateRoomReq
+func (h *handler) CreateConversation(c *gin.Context) {
+	var req dto.CreateConversationReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	h.hub.Rooms[req.ID] = &Room{
-		ID:      req.ID,
-		Name:    req.Name,
+	conv := models.Conversation{
+		Type:      req.Type,
+		CreatorID: req.CreatorID,
+	}
+
+	if err := h.conv.Create(c, conv); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	participants := make([]models.Participant, 0)
+	for _, userID := range req.Participants {
+		participants = append(participants, models.Participant{
+			UserID:         userID,
+			ConversationID: conv.ID,
+		})
+	}
+	if err := h.participant.BulkCreate(c, participants); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	convID := strconv.FormatUint(conv.ID, 10)
+	h.hub.Conversations[convID] = &Conversation{
+		ID:      convID,
+		Type:    conv.Type,
+		Creator: conv.CreatorID,
 		Clients: make(map[string]*Client),
 	}
 
@@ -50,29 +81,50 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (h *handler) JoinRoom(c *gin.Context) {
+func (h *handler) JoinConversation(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	roomID := c.Param("roomId")
+	conversationID := c.Param("conversationId")
 	clientID := c.Query("userId")
 	username := c.Query("username")
 
+	clientIDUint, err := strconv.ParseUint(clientID, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	convIDUint, err := strconv.ParseUint(conversationID, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid conversation ID"})
+		return
+	}
+
+	participant := models.Participant{
+		UserID:         clientIDUint,
+		ConversationID: convIDUint,
+	}
+	if err := h.participant.Create(c, participant); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	cl := &Client{
-		Conn:     conn,
-		Message:  make(chan *Message, 10),
-		ID:       clientID,
-		RoomID:   roomID,
-		Username: username,
+		Conn:           conn,
+		Message:        make(chan *Message, 10),
+		ID:             clientID,
+		ConversationID: conversationID,
+		Username:       username,
 	}
 
 	m := &Message{
-		Content:  "A new user has joined the room",
-		RoomID:   roomID,
-		Username: username,
+		Content:        "A new user has joined the conversation",
+		ConversationID: conversationID,
+		Username:       username,
 	}
 
 	h.hub.Register <- cl
@@ -82,29 +134,28 @@ func (h *handler) JoinRoom(c *gin.Context) {
 	cl.readMessage(h.hub)
 }
 
-func (h *handler) GetRooms(c *gin.Context) {
-	rooms := make([]dto.RoomRes, 0)
+func (h *handler) GetConversations(c *gin.Context) {
+	conversations := make([]dto.ConversationRes, 0)
 
-	for _, r := range h.hub.Rooms {
-		rooms = append(rooms, dto.RoomRes{
-			ID:   r.ID,
-			Name: r.Name,
+	for _, r := range h.hub.Conversations {
+		conversations = append(conversations, dto.ConversationRes{
+			ID: r.ID,
 		})
 	}
 
-	c.JSON(http.StatusOK, rooms)
+	c.JSON(http.StatusOK, conversations)
 }
 
 func (h *handler) GetClients(c *gin.Context) {
 	var clients []dto.ClientRes
-	roomId := c.Param("roomId")
+	conversationId := c.Param("conversationId")
 
-	if _, ok := h.hub.Rooms[roomId]; !ok {
+	if _, ok := h.hub.Conversations[conversationId]; !ok {
 		clients = make([]dto.ClientRes, 0)
 		c.JSON(http.StatusOK, clients)
 	}
 
-	for _, c := range h.hub.Rooms[roomId].Clients {
+	for _, c := range h.hub.Conversations[conversationId].Clients {
 		clients = append(clients, dto.ClientRes{
 			ID:       c.ID,
 			Username: c.Username,

@@ -25,21 +25,36 @@ CREATE UNIQUE INDEX "idx_users_username" ON "public"."users" ("username");
 CREATE UNIQUE INDEX "idx_users_email" ON "public"."users" ("email");
 
 
--- Create "chats" table
-CREATE TABLE "public"."chats" (
+-- Create "conversations" table
+CREATE TABLE "public"."conversations" (
     "id" bigserial NOT NULL,
     "created_at" timestamptz NULL,
     "updated_at" timestamptz NULL,
     "deleted_at" timestamptz NULL,
-    "sender_id" bigint NULL,
-    "receiver_id" bigint NULL,
+    "type" enum('private', 'group') NOT NULL,
+    "creator_id" bigint NULL,
     PRIMARY KEY ("id"),
-    CONSTRAINT "fk_chats_sender_id" FOREIGN KEY ("sender_id") REFERENCES "users"("id"),
-    CONSTRAINT "fk_chats_receiver_id" FOREIGN KEY ("receiver_id") REFERENCES "users"("id")
+    CONSTRAINT "fk_conversations_creator_id" FOREIGN KEY ("creator_id") REFERENCES "users"("id")
 );
 
 -- Create index "idx_files_deleted_at" to table: "files"
-CREATE INDEX "idx_chats_deleted_at" ON "public"."chats" ("deleted_at");
+CREATE INDEX "idx_conversation_deleted_at" ON "public"."conversations" ("deleted_at");
+
+-- Create "participants" table
+CREATE TABLE "public"."participants" (
+    "id" bigserial NOT NULL,
+    "created_at" timestamptz NULL,
+    "updated_at" timestamptz NULL,
+    "deleted_at" timestamptz NULL,
+    "user_id" bigint NULL,
+    "conversation_id" bigint NULL,
+    PRIMARY KEY ("id"),
+    CONSTRAINT "fk_participants_user_id" FOREIGN KEY ("user_id") REFERENCES "users"("id"),
+    CONSTRAINT "fk_participants_conversation_id" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id")
+);
+-- Create index "idx_participants_deleted_at" to table: "participants"
+CREATE INDEX "idx_participants_deleted_at" ON "public"."participants" ("deleted_at");
+
 
 -- Create "messages" table
 CREATE TABLE "public"."messages" (
@@ -47,11 +62,12 @@ CREATE TABLE "public"."messages" (
     "created_at" timestamptz NULL,
     "updated_at" timestamptz NULL,
     "deleted_at" timestamptz NULL,
-    "chat_id" bigint NULL,
-    "message" text NULL,
-    "is_read" boolean NULL,
+    "sender_id" bigint NULL,
+    "conversation_id" bigint NULL,
+    "content" text NULL,
     PRIMARY KEY ("id"),
-    CONSTRAINT "fk_messages_chat_id" FOREIGN KEY ("chat_id") REFERENCES "chats"("id")
+    CONSTRAINT "fk_messages_sender_id" FOREIGN KEY ("sender_id") REFERENCES "users"("id"),
+    CONSTRAINT "fk_messages_conversation_id" FOREIGN KEY ("conversation_id") REFERENCES "conversations"("id")
 );
 
 -- Create index "idx_messages_deleted_at" to table: "messages"
