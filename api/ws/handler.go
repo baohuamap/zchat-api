@@ -21,15 +21,20 @@ type Handler interface {
 
 type handler struct {
 	hub         *Hub
+	msg         repository.MessageRepository
 	conv        repository.ConversationRepository
 	participant repository.ParticipantRepository
 }
 
-func NewHandler(h *Hub, conv repository.ConversationRepository, participant repository.ParticipantRepository) Handler {
+func NewHandler(
+	h *Hub, conv repository.ConversationRepository, participant repository.ParticipantRepository,
+	msg repository.MessageRepository,
+) Handler {
 	return &handler{
 		hub:         h,
 		conv:        conv,
 		participant: participant,
+		msg:         msg,
 	}
 }
 
@@ -40,7 +45,7 @@ func (h *handler) CreateConversation(c *gin.Context) {
 		return
 	}
 
-	conv := models.Conversation{
+	conv := &models.Conversation{
 		Type:      req.Type,
 		CreatorID: req.CreatorID,
 	}
@@ -70,7 +75,11 @@ func (h *handler) CreateConversation(c *gin.Context) {
 		Clients: make(map[string]*Client),
 	}
 
-	c.JSON(http.StatusOK, req)
+	res := &dto.CreateConversationRes{
+		ID: convID,
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 var upgrader = websocket.Upgrader{
@@ -104,7 +113,7 @@ func (h *handler) JoinConversation(c *gin.Context) {
 		return
 	}
 
-	participant := models.Participant{
+	participant := &models.Participant{
 		UserID:         clientIDUint,
 		ConversationID: convIDUint,
 	}
@@ -114,11 +123,14 @@ func (h *handler) JoinConversation(c *gin.Context) {
 	}
 
 	cl := &Client{
-		Conn:           conn,
-		Message:        make(chan *Message, 10),
-		ID:             clientID,
-		ConversationID: conversationID,
-		Username:       username,
+		Conn:            conn,
+		Message:         make(chan *Message, 10),
+		ID:              clientID,
+		ConversationID:  conversationID,
+		Username:        username,
+		msgRepo:         h.msg,
+		convRepo:        h.conv,
+		participantRepo: h.participant,
 	}
 
 	m := &Message{

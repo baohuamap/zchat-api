@@ -9,7 +9,7 @@ import (
 )
 
 type MessageRepository interface {
-	Create(ctx context.Context, user models.Message) error
+	Create(ctx context.Context, user *models.Message) error
 	Get(ctx context.Context, id uint) (models.Message, error)
 	GetByConversationID(ctx context.Context, conversationID uint64) ([]models.Message, error)
 	GetBySenderID(ctx context.Context, userID uint64) ([]models.Message, error)
@@ -26,7 +26,7 @@ func NewMessageRepository(DB *gorm.DB) MessageRepository {
 	return &message{DB: DB}
 }
 
-func (r message) Create(ctx context.Context, msg models.Message) error {
+func (r message) Create(ctx context.Context, msg *models.Message) error {
 	return r.DB.Create(&msg).Error
 }
 

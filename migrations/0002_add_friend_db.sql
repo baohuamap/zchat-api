@@ -1,6 +1,6 @@
 
--- Create "friendship" table
-CREATE TABLE "public"."friendship" (
+-- Create "friendships" table
+CREATE TABLE "public"."friendships" (
     "id" bigserial NOT NULL,
     "created_at" timestamptz NULL,
     "updated_at" timestamptz NULL,
@@ -11,20 +11,20 @@ CREATE TABLE "public"."friendship" (
     PRIMARY KEY ("id")
 );
 
--- Create index "idx_friendship_deleted_at" to table: "friendship"
-CREATE INDEX "idx_friendship_deleted_at" ON "public"."friendship" ("deleted_at");
+-- Create index "idx_friendship_deleted_at" to table: "friendships"
+CREATE INDEX "idx_friendship_deleted_at" ON "public"."friendships" ("deleted_at");
 
--- Create index "idx_friendship_user_id" to table: "friendship"
-CREATE INDEX "idx_friendship_user_id" ON "public"."friendship" ("user_id");
+-- Create index "idx_friendship_user_id" to table: "friendships"
+CREATE INDEX "idx_friendship_user_id" ON "public"."friendships" ("user_id");
 
--- Create index "idx_friendship_friend_id" to table: "friendship"
-CREATE INDEX "idx_friendship_friend_id" ON "public"."friendship" ("friend_id");
+-- Create index "idx_friendship_friend_id" to table: "friendships"
+CREATE INDEX "idx_friendship_friend_id" ON "public"."friendships" ("friend_id");
 
 
 
 ---- create above / drop below ----
 
-DROP TABLE friendship CASCADE;
+DROP TABLE friendships CASCADE;
 
 
 

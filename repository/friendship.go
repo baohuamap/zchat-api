@@ -8,7 +8,7 @@ import (
 )
 
 type FriendshipRepository interface {
-	Create(ctx context.Context, friendship models.Friendship) error
+	Create(ctx context.Context, friendship *models.Friendship) error
 	Get(ctx context.Context, id uint) (models.Friendship, error)
 	GetByUserID(ctx context.Context, userID uint64) ([]models.Friendship, error)
 	GetByFriendID(ctx context.Context, friendID uint64) ([]models.Friendship, error)
@@ -25,7 +25,7 @@ func NewFriendshipRepository(DB *gorm.DB) FriendshipRepository {
 	return &friendship{DB: DB}
 }
 
-func (r friendship) Create(ctx context.Context, friendship models.Friendship) error {
+func (r friendship) Create(ctx context.Context, friendship *models.Friendship) error {
 	return r.DB.Create(&friendship).Error
 }
 

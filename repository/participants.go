@@ -8,7 +8,7 @@ import (
 )
 
 type ParticipantRepository interface {
-	Create(ctx context.Context, participant models.Participant) error
+	Create(ctx context.Context, participant *models.Participant) error
 	BulkCreate(ctx context.Context, participants []models.Participant) error
 	Get(ctx context.Context, id uint64) (models.Participant, error)
 	GetByUserID(ctx context.Context, userID uint64) ([]models.Participant, error)
@@ -26,7 +26,7 @@ func NewParticipantRepository(DB *gorm.DB) ParticipantRepository {
 	return &participant{DB: DB}
 }
 
-func (r participant) Create(ctx context.Context, participant models.Participant) error {
+func (r participant) Create(ctx context.Context, participant *models.Participant) error {
 	return r.DB.Create(&participant).Error
 }
 

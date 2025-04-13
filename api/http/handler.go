@@ -17,7 +17,8 @@ type Handler interface {
 	AddFriend(ctx *gin.Context)
 	AcceptFriend(ctx *gin.Context)
 	RejectFriend(ctx *gin.Context)
-	GetFriendRequests(ctx *gin.Context)
+	GetSentFriendRequests(ctx *gin.Context)
+	GetReceivedFriendRequests(ctx *gin.Context)
 	GetFriends(ctx *gin.Context)
 }
 
@@ -163,7 +164,7 @@ func (h *handler) RejectFriend(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "reject friend successfully"})
 }
 
-func (h *handler) GetFriendRequests(c *gin.Context) {
+func (h *handler) GetSentFriendRequests(c *gin.Context) {
 	userID := c.Param("userId")
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
@@ -177,7 +178,30 @@ func (h *handler) GetFriendRequests(c *gin.Context) {
 		return
 	}
 
-	friendRequests, err := h.userService.GetFriendRequests(c.Request.Context(), userIDUint)
+	friendRequests, err := h.userService.GetSentFriendRequests(c.Request.Context(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, friendRequests)
+}
+
+func (h *handler) GetReceivedFriendRequests(c *gin.Context) {
+	userID := c.Param("friendId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	// Convert userID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
+
+	friendRequests, err := h.userService.GetReceivedFriendRequests(c.Request.Context(), userIDUint)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -1,9 +1,15 @@
 package dto
 
+import "github.com/baohuamap/zchat-api/models"
+
 type CreateConversationReq struct {
-	Type         string   `json:"type"` // 1: private, 2: group
-	CreatorID    uint64   `json:"creatorId"`
-	Participants []uint64 `json:"participants"`
+	Type         models.ConversationType `json:"type"` // 1: private, 2: group
+	CreatorID    uint64                  `json:"creator_id"`
+	Participants []uint64                `json:"participants"`
+}
+
+type CreateConversationRes struct {
+	ID string `json:"id"`
 }
 
 type ConversationRes struct {

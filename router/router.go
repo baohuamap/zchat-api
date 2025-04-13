@@ -20,10 +20,11 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.GET("/logout", httpHandler.Logout)
 
 	r.POST("/addFriend/:userId/:friendId", httpHandler.AddFriend)
-	r.PUT("/acceptFriend/:userId/:friendId", httpHandler.AcceptFriend)
-	r.PUT("/rejectFriend/:userId/:friendId", httpHandler.RejectFriend)
-	r.GET("/getFriendRequests/:userId", httpHandler.GetFriendRequests)
-	r.GET("/getFriends/:userId", httpHandler.GetFriends)
+	r.PUT("/acceptFriend/:friendId/:userId", httpHandler.AcceptFriend)
+	r.PUT("/rejectFriend/:friendId/:userId", httpHandler.RejectFriend)
+	r.GET("/sentFriendRequests/:userId", httpHandler.GetSentFriendRequests)
+	r.GET("/receivedFriendRequests/:friendId", httpHandler.GetReceivedFriendRequests)
+	r.GET("/friends/:userId", httpHandler.GetFriends)
 
 	// ws
 	r.POST("/ws/createConversation", wsHandler.CreateConversation)

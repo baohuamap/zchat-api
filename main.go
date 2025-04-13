@@ -59,11 +59,15 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db.Gormer())
 	friendshipRepo := repository.NewFriendshipRepository(db.Gormer())
+	participantRepo := repository.NewParticipantRepository(db.Gormer())
+	conversationRepo := repository.NewConversationRepository(db.Gormer())
+	messageRepo := repository.NewMessageRepository(db.Gormer())
+
 	u := service.NewUserService(userRepo, friendshipRepo)
 	httpHandler := httpserver.NewHandler(u)
 
 	hub := ws.NewHub()
-	wsHandler := ws.NewHandler(hub)
+	wsHandler := ws.NewHandler(hub, conversationRepo, participantRepo, messageRepo)
 	go hub.Run()
 
 	router.SetupRoutes(r, httpHandler, wsHandler)

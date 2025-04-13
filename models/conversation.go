@@ -4,8 +4,15 @@ import "gorm.io/gorm"
 
 type Conversation struct {
 	gorm.Model
-	ID        uint64 `gorm:"primaryKey autoIncrement:true" json:"id"`
-	Type      string `gorm:"not null" json:"type"` // 1: private, 2: group
-	CreatorID uint64 `gorm:"null" json:"creator_id"`
-	Creator   User   `gorm:"foreignKey:CreatorID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"creator"`
+	ID        uint64           `gorm:"primaryKey autoIncrement:true" json:"id"`
+	Type      ConversationType `gorm:"type:conversation_type;not null" json:"type"` // Enum: 'private', 'group'
+	CreatorID uint64           `gorm:"null" json:"creator_id"`
+	Creator   User             `gorm:"foreignKey:CreatorID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"creator"`
 }
+
+type ConversationType string
+
+const (
+	ConversationTypePrivate ConversationType = "private"
+	ConversationTypeGroup   ConversationType = "group"
+)

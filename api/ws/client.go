@@ -1,19 +1,24 @@
 package ws
 
 import (
+	"context"
 	"log"
 	"strconv"
 
 	"github.com/baohuamap/zchat-api/models"
+	"github.com/baohuamap/zchat-api/repository"
 	"github.com/gorilla/websocket"
 )
 
 type Client struct {
-	Conn           *websocket.Conn
-	Message        chan *Message
-	ID             string `json:"id"`
-	ConversationID string `json:"conversationId"`
-	Username       string `json:"username"`
+	Conn            *websocket.Conn
+	Message         chan *Message
+	ID              string `json:"id"`
+	ConversationID  string `json:"conversationId"`
+	Username        string `json:"username"`
+	msgRepo         repository.MessageRepository
+	convRepo        repository.ConversationRepository
+	participantRepo repository.ParticipantRepository
 }
 
 type Message struct {
@@ -53,11 +58,25 @@ func (c *Client) readMessage(hub *Hub) {
 		}
 
 		convID, err := strconv.ParseUint(c.ConversationID, 10, 64)
+		if err != nil {
+			log.Printf("error: %v", err)
+			continue
+		}
 
-		msg := &models.Message{
+		senderID, err := strconv.ParseUint(c.ID, 10, 64)
+		if err != nil {
+			log.Printf("error: %v", err)
+			continue
+		}
+
+		msgObj := &models.Message{
 			Content:        string(m),
 			ConversationID: convID,
-			SenderID:       c.ID,
+			SenderID:       senderID,
+		}
+		if err := c.msgRepo.Create(context.Background(), msgObj); err != nil {
+			log.Printf("error: %v", err)
+			continue
 		}
 
 		msg := &Message{

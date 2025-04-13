@@ -25,13 +25,16 @@ CREATE UNIQUE INDEX "idx_users_username" ON "public"."users" ("username");
 CREATE UNIQUE INDEX "idx_users_email" ON "public"."users" ("email");
 
 
+-- Create "conversation_type" enum type
+CREATE TYPE "conversation_type" AS ENUM ('private', 'group');
+
 -- Create "conversations" table
 CREATE TABLE "public"."conversations" (
     "id" bigserial NOT NULL,
     "created_at" timestamptz NULL,
     "updated_at" timestamptz NULL,
     "deleted_at" timestamptz NULL,
-    "type" enum('private', 'group') NOT NULL,
+    "type" "conversation_type" NOT NULL,
     "creator_id" bigint NULL,
     PRIMARY KEY ("id"),
     CONSTRAINT "fk_conversations_creator_id" FOREIGN KEY ("creator_id") REFERENCES "users"("id")
@@ -77,8 +80,9 @@ CREATE INDEX "idx_messages_deleted_at" ON "public"."messages" ("deleted_at");
 
 DROP TABLE users CASCADE;
 
-DROP TABLE chats CASCADE;
+DROP TABLE conversations CASCADE;
+
+DROP TABLE participants CASCADE;
 
 DROP TABLE messages CASCADE;
-
 

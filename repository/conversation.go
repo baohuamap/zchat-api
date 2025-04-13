@@ -8,7 +8,7 @@ import (
 )
 
 type ConversationRepository interface {
-	Create(ctx context.Context, conversation models.Conversation) error
+	Create(ctx context.Context, conversation *models.Conversation) error
 	Get(ctx context.Context, id uint64) (models.Conversation, error)
 	Update(ctx context.Context, conversation models.Conversation) error
 	Delete(ctx context.Context, id uint64) error
@@ -22,7 +22,7 @@ func NewConversationRepository(DB *gorm.DB) ConversationRepository {
 	return &conversation{DB: DB}
 }
 
-func (r conversation) Create(ctx context.Context, conversation models.Conversation) error {
+func (r conversation) Create(ctx context.Context, conversation *models.Conversation) error {
 	return r.DB.Create(&conversation).Error
 }
 

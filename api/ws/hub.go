@@ -1,10 +1,12 @@
 package ws
 
+import "github.com/baohuamap/zchat-api/models"
+
 type Conversation struct {
-	ID      string             `json:"id"`
-	Type    string             `json:"type"` // 1: private, 2: group
-	Creator uint64             `json:"creator"`
-	Clients map[string]*Client `json:"clients"`
+	ID      string                  `json:"id"`
+	Type    models.ConversationType `json:"type"` // 1: private, 2: group
+	Creator uint64                  `json:"creator"`
+	Clients map[string]*Client      `json:"clients"`
 }
 
 type Hub struct {
