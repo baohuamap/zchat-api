@@ -15,7 +15,7 @@ import (
 type Handler interface {
 	CreateConversation(c *gin.Context)
 	JoinConversation(c *gin.Context)
-	GetConversations(c *gin.Context)
+	// GetConversations(c *gin.Context)
 	GetClients(c *gin.Context)
 }
 
@@ -146,17 +146,17 @@ func (h *handler) JoinConversation(c *gin.Context) {
 	cl.readMessage(h.hub)
 }
 
-func (h *handler) GetConversations(c *gin.Context) {
-	conversations := make([]dto.ConversationRes, 0)
+// func (h *handler) GetConversations(c *gin.Context) {
+// 	conversations := make([]dto.ConversationRes, 0)
 
-	for _, r := range h.hub.Conversations {
-		conversations = append(conversations, dto.ConversationRes{
-			ID: r.ID,
-		})
-	}
+// 	for _, r := range h.hub.Conversations {
+// 		conversations = append(conversations, dto.ConversationRes{
+// 			ID: r.ID,
+// 		})
+// 	}
 
-	c.JSON(http.StatusOK, conversations)
-}
+// 	c.JSON(http.StatusOK, conversations)
+// }
 
 func (h *handler) GetClients(c *gin.Context) {
 	var clients []dto.ClientRes

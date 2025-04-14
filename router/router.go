@@ -26,9 +26,12 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.GET("/receivedFriendRequests/:friendId", httpHandler.GetReceivedFriendRequests)
 	r.GET("/friends/:userId", httpHandler.GetFriends)
 
+	r.GET("/conversations/:userId", httpHandler.LoadConversations)
+	r.GET("/messages/:conversationId", httpHandler.LoadMessages)
+
 	// ws
 	r.POST("/ws/createConversation", wsHandler.CreateConversation)
 	r.GET("/ws/joinConversation/:conversationId", wsHandler.JoinConversation)
-	r.GET("/ws/getConversations", wsHandler.GetConversations)
+	// r.GET("/ws/getConversations", wsHandler.GetConversations)
 	r.GET("/ws/getClients/:conversationId", wsHandler.GetClients)
 }

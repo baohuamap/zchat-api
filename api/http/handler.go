@@ -20,14 +20,17 @@ type Handler interface {
 	GetSentFriendRequests(ctx *gin.Context)
 	GetReceivedFriendRequests(ctx *gin.Context)
 	GetFriends(ctx *gin.Context)
+	LoadConversations(ctx *gin.Context)
+	LoadMessages(ctx *gin.Context)
 }
 
 type handler struct {
 	userService service.User
+	msgService  service.Message
 }
 
-func NewHandler(u service.User) Handler {
-	return &handler{userService: u}
+func NewHandler(u service.User, m service.Message) Handler {
+	return &handler{userService: u, msgService: m}
 }
 
 func (h *handler) ServerStatus(ctx *gin.Context) {
@@ -231,4 +234,50 @@ func (h *handler) GetFriends(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, friends)
+}
+
+func (h *handler) LoadConversations(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	// Convert userID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
+
+	conversations, err := h.msgService.LoadConversations(c.Request.Context(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, conversations)
+}
+
+func (h *handler) LoadMessages(c *gin.Context) {
+	conversationID := c.Param("conversationId")
+	if conversationID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "conversationId is required"})
+		return
+	}
+	// Convert conversationID to uint
+	// Assuming they are valid uints for simplicity
+	conversationIDUint, err := strconv.ParseUint(conversationID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversationId"})
+		return
+	}
+
+	messages, err := h.msgService.LoadMessages(c.Request.Context(), conversationIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, messages)
 }

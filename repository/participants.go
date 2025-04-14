@@ -11,6 +11,7 @@ type ParticipantRepository interface {
 	Create(ctx context.Context, participant *models.Participant) error
 	BulkCreate(ctx context.Context, participants []models.Participant) error
 	Get(ctx context.Context, id uint64) (models.Participant, error)
+	GetConversationByParticipants(ctx context.Context, userID uint64) ([]models.Conversation, error)
 	GetByUserID(ctx context.Context, userID uint64) ([]models.Participant, error)
 	GetByConversationID(ctx context.Context, conversationID uint64) ([]models.Participant, error)
 	GetByUserIDAndConversationID(ctx context.Context, userID, conversationID uint64) (models.Participant, error)
@@ -64,4 +65,14 @@ func (r participant) Update(ctx context.Context, participant models.Participant)
 
 func (r participant) Delete(ctx context.Context, id uint64) error {
 	return r.DB.Delete(&models.Participant{}, id).Error
+}
+
+func (r participant) GetConversationByParticipants(ctx context.Context, userID uint64) ([]models.Conversation, error) {
+	var conversations []models.Conversation
+	err := r.DB.Table("participants").
+		Select("DISTINCT conversations.*").
+		Joins("JOIN conversations ON participants.conversation_id = conversations.id").
+		Where("participants.user_id = ?", userID).
+		Find(&conversations).Error
+	return conversations, err
 }

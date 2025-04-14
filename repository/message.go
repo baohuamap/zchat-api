@@ -38,7 +38,7 @@ func (r message) Get(ctx context.Context, id uint) (models.Message, error) {
 
 func (r message) GetByConversationID(ctx context.Context, conversationID uint64) ([]models.Message, error) {
 	var messages []models.Message
-	err := r.DB.Where("conversation_id = ?", conversationID).Find(&messages).Error
+	err := r.DB.Where("conversation_id = ?", conversationID).Find(&messages).Order("created_at").Error
 	return messages, err
 }
 

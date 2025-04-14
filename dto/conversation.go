@@ -13,5 +13,12 @@ type CreateConversationRes struct {
 }
 
 type ConversationRes struct {
-	ID string `json:"id"`
+	ID           uint64                  `json:"id"`
+	Type         models.ConversationType `json:"type"` // 1: private, 2: group
+	CreatorID    uint64                  `json:"creator_id"`
+	Participants []uint64                `json:"participants"`
+}
+
+type ConversationListRes struct {
+	Conversations []ConversationRes `json:"conversations"`
 }
