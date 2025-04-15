@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"mime/multipart"
+	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -17,6 +18,7 @@ import (
 type S3Client interface {
 	getBucketName() string
 	UploadFile(ctx context.Context, key string, file *multipart.File) error
+	GetFileURL(key string) string
 }
 
 type s3Client struct {
@@ -45,9 +47,10 @@ func (s *s3Client) getBucketName() string {
 
 func (s *s3Client) UploadFile(ctx context.Context, key string, file *multipart.File) error {
 	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.getBucketName()),
-		Key:    aws.String(key),
-		Body:   *file,
+		Bucket:      aws.String(s.getBucketName()),
+		Key:         aws.String(key),
+		Body:        *file,
+		ContentType: aws.String(mimeTypeByExtension(key)),
 	})
 	if err != nil {
 		var apiErr smithy.APIError
@@ -68,4 +71,22 @@ func (s *s3Client) UploadFile(ctx context.Context, key string, file *multipart.F
 	}
 
 	return err
+}
+
+func mimeTypeByExtension(filename string) string {
+	ext := filepath.Ext(filename)
+	switch ext {
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+func (s *s3Client) GetFileURL(key string) string {
+	return "https://d237yttu3l1m25.cloudfront.net/" + key
 }

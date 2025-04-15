@@ -305,14 +305,8 @@ func (s *service) UploadAvatar(c context.Context, userID uint64, filename string
 	}
 
 	// Get file URL
-	// fileURL, err := s.s3Client.GetFileURL(ctx, strconv.FormatUint(userID, 10)+"/avatar")
-	// if err != nil {
-	// 	slog.Error("Error getting file URL", "userID", userID, "error", err)
-	// 	return nil, err
-	// }
-	// // Update user avatar
-	// user.Avatar = fileURL
-
+	fileURL := s.s3Client.GetFileURL(strconv.FormatUint(userID, 10) + "/avatar/" + filename)
+	user.Avatar = fileURL
 	if err := s.repo.Update(ctx, user); err != nil {
 		slog.Error("Error updating user avatar", "userID", userID, "error", err)
 		return nil, err
