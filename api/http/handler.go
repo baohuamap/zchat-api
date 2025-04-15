@@ -24,6 +24,7 @@ type Handler interface {
 	LoadMessages(ctx *gin.Context)
 	// UploadAvatar(ctx *gin.Context)
 	FindUsers(ctx *gin.Context)
+	GetUser(ctx *gin.Context)
 }
 
 type handler struct {
@@ -327,6 +328,29 @@ func (h *handler) FindUsers(c *gin.Context) {
 	}
 
 	user, err := h.userService.FindUsers(c.Request.Context(), search)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *handler) GetUser(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	// Convert userID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
+
+	user, err := h.userService.GetUser(c.Request.Context(), userIDUint)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

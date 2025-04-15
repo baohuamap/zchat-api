@@ -44,3 +44,15 @@ type FindUserRes struct {
 type FindUserListRes struct {
 	Users []FindUserRes `json:"users"`
 }
+
+type GetUserRes struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Avatar    string `json:"avatar"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}

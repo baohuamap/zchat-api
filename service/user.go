@@ -29,6 +29,7 @@ type User interface {
 	GetFriends(c context.Context, userID uint64) ([]models.User, error)
 	// UploadAvatar(c context.Context, userID uint64, file *multipart.File) error
 	FindUsers(c context.Context, search string) (*dto.FindUserListRes, error)
+	GetUser(c context.Context, userID uint64) (*dto.GetUserRes, error)
 }
 
 type service struct {
@@ -331,4 +332,29 @@ func (s *service) FindUsers(c context.Context, search string) (*dto.FindUserList
 	}
 
 	return &res, nil
+}
+
+func (s *service) GetUser(c context.Context, userID uint64) (*dto.GetUserRes, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	u, err := s.repo.Get(ctx, userID)
+	if err != nil {
+		slog.Error("User not found", "userID", userID)
+		return nil, err
+	}
+
+	res := &dto.GetUserRes{
+		ID:        strconv.FormatUint(u.ID, 10),
+		Username:  u.Username,
+		Email:     u.Email,
+		Phone:     u.Phone,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Avatar:    u.Avatar,
+		CreatedAt: u.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: u.UpdatedAt.Format(time.RFC3339),
+	}
+
+	return res, nil
 }
