@@ -16,6 +16,7 @@ import (
 
 	httpserver "github.com/baohuamap/zchat-api/api/http"
 	"github.com/baohuamap/zchat-api/api/ws"
+	"github.com/baohuamap/zchat-api/pkg/aws"
 	"github.com/baohuamap/zchat-api/pkg/gorm"
 	"github.com/baohuamap/zchat-api/repository"
 	"github.com/baohuamap/zchat-api/router"
@@ -57,13 +58,22 @@ func main() {
 		WriteTimeout: time.Duration(20) * time.Second,
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
+	defer cancel()
+
 	userRepo := repository.NewUserRepository(db.Gormer())
 	friendshipRepo := repository.NewFriendshipRepository(db.Gormer())
 	participantRepo := repository.NewParticipantRepository(db.Gormer())
 	conversationRepo := repository.NewConversationRepository(db.Gormer())
 	messageRepo := repository.NewMessageRepository(db.Gormer())
 
-	u := service.NewUserService(userRepo, friendshipRepo)
+	s3Client, err := aws.NewS3Client(ctx)
+	if err != nil {
+		slog.Error("Creating S3 client: ", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+
+	u := service.NewUserService(userRepo, friendshipRepo, s3Client)
 	m := service.NewMessageService(conversationRepo, messageRepo, participantRepo)
 	httpHandler := httpserver.NewHandler(u, m)
 
@@ -86,8 +96,6 @@ func main() {
 	<-quit
 	slog.Info("Shutdown Server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(20)*time.Second)
-	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
 		slog.Info("Failed to shutdown server: ", slog.String("error", err.Error()))
 		os.Exit(1)

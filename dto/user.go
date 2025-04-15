@@ -56,3 +56,7 @@ type GetUserRes struct {
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
+
+type UploadAvatarRes struct {
+	URL string `json:"url"`
+}

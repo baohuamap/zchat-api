@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"log/slog"
+	"mime/multipart"
 	"strconv"
 	"time"
 
+	"github.com/baohuamap/zchat-api/pkg/aws"
 	"github.com/baohuamap/zchat-api/util"
 
 	"github.com/baohuamap/zchat-api/dto"
@@ -27,7 +29,7 @@ type User interface {
 	GetSentFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
 	GetReceivedFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
 	GetFriends(c context.Context, userID uint64) ([]models.User, error)
-	// UploadAvatar(c context.Context, userID uint64, file *multipart.File) error
+	UploadAvatar(c context.Context, userID uint64, filename string, file *multipart.File) (*dto.UploadAvatarRes, error)
 	FindUsers(c context.Context, search string) (*dto.FindUserListRes, error)
 	GetUser(c context.Context, userID uint64) (*dto.GetUserRes, error)
 }
@@ -35,12 +37,12 @@ type User interface {
 type service struct {
 	repo           repo.UserRepository
 	friendshipRepo repo.FriendshipRepository
-	// s3Client       aws.S3Client
+	s3Client       aws.S3Client
 }
 
-func NewUserService(r repo.UserRepository, f repo.FriendshipRepository) User {
+func NewUserService(r repo.UserRepository, f repo.FriendshipRepository, s3 aws.S3Client) User {
 	return &service{
-		r, f,
+		r, f, s3,
 	}
 }
 
@@ -269,14 +271,14 @@ func (s *service) GetFriends(c context.Context, userID uint64) ([]models.User, e
 					slog.Error("Error getting friend", "friendID", friendship.FriendID)
 					continue
 				}
-				friends = append(friends, friend)
+				friends = append(friends, *friend)
 			} else if friendship.FriendID == userID {
 				friend, err := s.repo.Get(ctx, friendship.UserID)
 				if err != nil {
 					slog.Error("Error getting friend", "friendID", friendship.FriendID)
 					continue
 				}
-				friends = append(friends, friend)
+				friends = append(friends, *friend)
 			}
 		}
 	}
@@ -284,27 +286,42 @@ func (s *service) GetFriends(c context.Context, userID uint64) ([]models.User, e
 	return friends, nil
 }
 
-// func (s *service) UploadAvatar(c context.Context, userID uint64, file *multipart.File) error {
-// 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
-// 	defer cancel()
+func (s *service) UploadAvatar(c context.Context, userID uint64, filename string, file *multipart.File) (*dto.UploadAvatarRes, error) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
 
-// 	// Check if user exists
-// 	if _, err := s.repo.Get(ctx, userID); err != nil {
-// 		slog.Error("User not found", "userID", userID)
-// 		return err
-// 	}
+	// Check if user exists
+	user, err := s.repo.Get(ctx, userID)
+	if err != nil {
+		slog.Error("User not found", "userID", userID)
+		return nil, err
+	}
 
-// 	// Upload file to s3
-// 	filePath, err := s.s3Client.UploadFile(ctx, "avatars/"+strconv.FormatUint(userID, 10), *file)
+	// Upload file to s3
+	err = s.s3Client.UploadFile(ctx, strconv.FormatUint(userID, 10)+"/avatar/"+filename, file)
+	if err != nil {
+		slog.Error("Error uploading file", "userID", userID, "error", err)
+		return nil, err
+	}
 
-// 	// Update user avatar
-// 	user := &models.User{
-// 		ID:     userID,
-// 		Avatar: filePath,
-// 	}
+	// Get file URL
+	// fileURL, err := s.s3Client.GetFileURL(ctx, strconv.FormatUint(userID, 10)+"/avatar")
+	// if err != nil {
+	// 	slog.Error("Error getting file URL", "userID", userID, "error", err)
+	// 	return nil, err
+	// }
+	// // Update user avatar
+	// user.Avatar = fileURL
 
-// 	return s.repo.Update(ctx, user)
-// }
+	if err := s.repo.Update(ctx, user); err != nil {
+		slog.Error("Error updating user avatar", "userID", userID, "error", err)
+		return nil, err
+	}
+
+	return &dto.UploadAvatarRes{
+		URL: user.Avatar,
+	}, nil
+}
 
 func (s *service) FindUsers(c context.Context, search string) (*dto.FindUserListRes, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)

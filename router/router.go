@@ -19,10 +19,9 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.POST("/login", httpHandler.Login)
 	r.GET("/logout", httpHandler.Logout)
 
-	// r.POST("/user/:userId/uploadAvatar", httpHandler.UploadAvatar)
-
 	r.GET("/findUsers", httpHandler.FindUsers)
 	r.GET("/user/:userId", httpHandler.GetUser)
+	r.POST("/user/:userId/uploadAvatar", httpHandler.UploadAvatar)
 
 	r.POST("/addFriend/:userId/:friendId", httpHandler.AddFriend)
 	r.PUT("/acceptFriend/:friendId/:userId", httpHandler.AcceptFriend)

@@ -22,7 +22,7 @@ type Handler interface {
 	GetFriends(ctx *gin.Context)
 	LoadConversations(ctx *gin.Context)
 	LoadMessages(ctx *gin.Context)
-	// UploadAvatar(ctx *gin.Context)
+	UploadAvatar(ctx *gin.Context)
 	FindUsers(ctx *gin.Context)
 	GetUser(ctx *gin.Context)
 }
@@ -285,40 +285,41 @@ func (h *handler) LoadMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, messages)
 }
 
-// func (h *handler) UploadAvatar(c *gin.Context) {
-// 	userID := c.Param("userId")
-// 	if userID == "" {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
-// 		return
-// 	}
-// 	// Convert userID to uint
-// 	// Assuming they are valid uints for simplicity
-// 	userIDUint, err := strconv.ParseUint(userID, 10, 32)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
-// 		return
-// 	}
+func (h *handler) UploadAvatar(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	// Convert userID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
 
-// 	fileHeader, err := c.FormFile("avatar")
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	file, err := fileHeader.Open()
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	defer file.Close()
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	filename := fileHeader.Filename
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	defer file.Close()
 
-// 	err = h.userService.UploadAvatar(c.Request.Context(), userIDUint, &file)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-// 		return
-// 	}
+	resp, err := h.userService.UploadAvatar(c.Request.Context(), userIDUint, filename, &file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{"message": "avatar uploaded successfully"})
-// }
+	c.JSON(http.StatusOK, resp)
+}
 
 func (h *handler) FindUsers(c *gin.Context) {
 	search := c.Query("search")
