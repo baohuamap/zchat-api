@@ -11,6 +11,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	Get(ctx context.Context, id uint64) (models.User, error)
+	Search(ctx context.Context, search string) ([]models.User, error)
 	GetByEmail(ctx context.Context, email string) (models.User, error)
 	GetByPhone(ctx context.Context, phone string) (models.User, error)
 }
@@ -42,5 +43,11 @@ func (r user) GetByEmail(ctx context.Context, email string) (models.User, error)
 func (r user) GetByPhone(ctx context.Context, phone string) (models.User, error) {
 	var u models.User
 	err := r.DB.Where("phone = ?", phone).First(&u).Error
+	return u, err
+}
+
+func (r user) Search(ctx context.Context, search string) ([]models.User, error) {
+	var u []models.User
+	err := r.DB.Distinct("username", "email", "phone").Where("username LIKE ? OR email LIKE ? OR phone LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Find(&u).Error
 	return u, err
 }
