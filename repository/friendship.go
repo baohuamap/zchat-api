@@ -9,11 +9,11 @@ import (
 
 type FriendshipRepository interface {
 	Create(ctx context.Context, friendship *models.Friendship) error
-	Get(ctx context.Context, id uint) (models.Friendship, error)
+	Get(ctx context.Context, id uint) (*models.Friendship, error)
 	GetByUserID(ctx context.Context, userID uint64) ([]models.Friendship, error)
 	GetByFriendID(ctx context.Context, friendID uint64) ([]models.Friendship, error)
-	GetByUserIDAndFriendID(ctx context.Context, userID, friendID uint64) (models.Friendship, error)
-	Update(ctx context.Context, friendship models.Friendship) error
+	GetByUserIDAndFriendID(ctx context.Context, userID, friendID uint64) (*models.Friendship, error)
+	Update(ctx context.Context, friendship *models.Friendship) error
 	Delete(ctx context.Context, id uint) error
 }
 
@@ -29,10 +29,10 @@ func (r friendship) Create(ctx context.Context, friendship *models.Friendship) e
 	return r.DB.Create(&friendship).Error
 }
 
-func (r friendship) Get(ctx context.Context, id uint) (models.Friendship, error) {
+func (r friendship) Get(ctx context.Context, id uint) (*models.Friendship, error) {
 	var f models.Friendship
 	err := r.DB.First(&f, id).Error
-	return f, err
+	return &f, err
 }
 
 func (r friendship) GetByUserID(ctx context.Context, userID uint64) ([]models.Friendship, error) {
@@ -47,13 +47,13 @@ func (r friendship) GetByFriendID(ctx context.Context, friendID uint64) ([]model
 	return friendships, err
 }
 
-func (r friendship) GetByUserIDAndFriendID(ctx context.Context, userID, friendID uint64) (models.Friendship, error) {
+func (r friendship) GetByUserIDAndFriendID(ctx context.Context, userID, friendID uint64) (*models.Friendship, error) {
 	var f models.Friendship
 	err := r.DB.Where("user_id = ? AND friend_id = ?", userID, friendID).First(&f).Error
-	return f, err
+	return &f, err
 }
 
-func (r friendship) Update(ctx context.Context, friendship models.Friendship) error {
+func (r friendship) Update(ctx context.Context, friendship *models.Friendship) error {
 	return r.DB.Save(&friendship).Error
 }
 

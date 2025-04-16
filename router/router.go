@@ -24,6 +24,7 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.POST("/user/:userId/uploadAvatar", httpHandler.UploadAvatar)
 
 	r.POST("/addFriend/:userId/:friendId", httpHandler.AddFriend)
+	r.DELETE("/cancelFriendRequest/:userId/:friendId", httpHandler.CancelFriendRequest)
 	r.PUT("/acceptFriend/:friendId/:userId", httpHandler.AcceptFriend)
 	r.PUT("/rejectFriend/:friendId/:userId", httpHandler.RejectFriend)
 	r.GET("/sentFriendRequests/:userId", httpHandler.GetSentFriendRequests)

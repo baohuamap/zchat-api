@@ -15,6 +15,7 @@ type Handler interface {
 	Login(ctx *gin.Context)
 	Logout(ctx *gin.Context)
 	AddFriend(ctx *gin.Context)
+	CancelFriendRequest(ctx *gin.Context)
 	AcceptFriend(ctx *gin.Context)
 	RejectFriend(ctx *gin.Context)
 	GetSentFriendRequests(ctx *gin.Context)
@@ -107,7 +108,37 @@ func (h *handler) AddFriend(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "friend added successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "friend request sent successfully"})
+}
+
+func (h *handler) CancelFriendRequest(c *gin.Context) {
+	userID := c.Param("userId")
+	friendID := c.Param("friendId")
+
+	if userID == "" || friendID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId and friendId are required"})
+		return
+	}
+	// Convert userID and friendID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
+	friendIDUint, err := strconv.ParseUint(friendID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid friendId"})
+		return
+	}
+
+	err = h.userService.CancelFriendRequest(c.Request.Context(), userIDUint, friendIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "cancel friend request successfully"})
 }
 
 func (h *handler) AcceptFriend(c *gin.Context) {
@@ -222,6 +253,13 @@ func (h *handler) GetFriends(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
 	}
+
+	search := c.Query("search")
+	if search == "" {
+		// c.JSON(http.StatusBadRequest, gin.H{"error": "search is required"})
+		// return
+	}
+
 	// Convert userID to uint
 	// Assuming they are valid uints for simplicity
 	userIDUint, err := strconv.ParseUint(userID, 10, 32)
@@ -230,7 +268,7 @@ func (h *handler) GetFriends(c *gin.Context) {
 		return
 	}
 
-	friends, err := h.userService.GetFriends(c.Request.Context(), userIDUint)
+	friends, err := h.userService.GetFriends(c.Request.Context(), userIDUint, search)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

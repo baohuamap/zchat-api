@@ -24,11 +24,12 @@ type User interface {
 	CreateUser(c context.Context, req *dto.CreateUserReq) (*dto.CreateUserRes, error)
 	Login(c context.Context, req *dto.LoginUserReq) (*dto.LoginUserRes, error)
 	AddFriend(c context.Context, userID uint64, friendID uint64) error
+	CancelFriendRequest(c context.Context, userID uint64, friendID uint64) error
 	AcceptFriend(c context.Context, userID uint64, friendID uint64) error
 	RejectFriend(c context.Context, userID uint64, friendID uint64) error
 	GetSentFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
 	GetReceivedFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
-	GetFriends(c context.Context, userID uint64) ([]models.User, error)
+	GetFriends(c context.Context, userID uint64, search string) ([]models.User, error)
 	UploadAvatar(c context.Context, userID uint64, filename string, file *multipart.File) (*dto.UploadAvatarRes, error)
 	FindUsers(c context.Context, search string) (*dto.FindUserListRes, error)
 	GetUser(c context.Context, userID uint64) (*dto.GetUserRes, error)
@@ -132,6 +133,38 @@ func (s *service) AddFriend(c context.Context, userID uint64, friendID uint64) e
 	}
 
 	return s.friendshipRepo.Create(ctx, friendship)
+}
+
+func (s *service) CancelFriendRequest(c context.Context, userID uint64, friendID uint64) error {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	// Check if user exists
+	if _, err := s.repo.Get(ctx, userID); err != nil {
+		slog.Error("User not found", "userID", userID)
+		return err
+	}
+	// Check if friend exists
+	if _, err := s.repo.Get(ctx, friendID); err != nil {
+		slog.Error("Friend not found", "friendID", friendID)
+		return err
+	}
+
+	friendship, err := s.friendshipRepo.GetByUserIDAndFriendID(ctx, userID, friendID)
+	if err != nil {
+		slog.Error("Friendship not found", "userID", userID, "friendID", friendID)
+		return err
+	}
+
+	if friendship.Status != "pending" {
+		slog.Error("Friendship not pending", "userID", userID, "friendID", friendID)
+		return nil
+	}
+	if err := s.friendshipRepo.Delete(ctx, friendship.ID); err != nil {
+		slog.Error("Error deleting friendship", "userID", userID, "friendID", friendID)
+		return err
+	}
+	return nil
 }
 
 func (s *service) AcceptFriend(c context.Context, userID uint64, friendID uint64) error {
@@ -238,7 +271,7 @@ func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) ([
 	return requests, nil
 }
 
-func (s *service) GetFriends(c context.Context, userID uint64) ([]models.User, error) {
+func (s *service) GetFriends(c context.Context, userID uint64, search string) ([]models.User, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
@@ -263,24 +296,23 @@ func (s *service) GetFriends(c context.Context, userID uint64) ([]models.User, e
 	friendships = append(friendships, _friendships...)
 
 	var friends []models.User
+	var friendIDs []uint64
 	for _, friendship := range friendships {
 		if friendship.Status == "accepted" {
 			if friendship.UserID == userID {
-				friend, err := s.repo.Get(ctx, friendship.FriendID)
-				if err != nil {
-					slog.Error("Error getting friend", "friendID", friendship.FriendID)
-					continue
-				}
-				friends = append(friends, *friend)
+				friendIDs = append(friendIDs, friendship.FriendID)
 			} else if friendship.FriendID == userID {
-				friend, err := s.repo.Get(ctx, friendship.UserID)
-				if err != nil {
-					slog.Error("Error getting friend", "friendID", friendship.FriendID)
-					continue
-				}
-				friends = append(friends, *friend)
+				friendIDs = append(friendIDs, friendship.UserID)
 			}
 		}
+	}
+	if len(friendIDs) == 0 {
+		return nil, nil
+	}
+	friends, err = s.repo.SearchWithIDs(ctx, search, friendIDs)
+	if err != nil {
+		slog.Error("Error getting friends", "userID", userID)
+		return nil, err
 	}
 
 	return friends, nil
