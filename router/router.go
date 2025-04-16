@@ -33,6 +33,7 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 
 	r.GET("/conversations/:userId", httpHandler.LoadConversations)
 	r.GET("/messages/:conversationId", httpHandler.LoadMessages)
+	r.POST("/seenMessages/:conversationId", httpHandler.SeenMessages)
 
 	// ws
 	r.POST("/ws/createConversation", wsHandler.CreateConversation)

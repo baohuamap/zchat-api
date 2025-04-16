@@ -18,3 +18,7 @@ type MessageRes struct {
 type MessageListRes struct {
 	Messages []MessageRes `json:"messages"`
 }
+
+type SeenMessagesReq struct {
+	UserID uint64 `json:"user_id"`
+}

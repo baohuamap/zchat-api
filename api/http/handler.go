@@ -23,6 +23,7 @@ type Handler interface {
 	GetFriends(ctx *gin.Context)
 	LoadConversations(ctx *gin.Context)
 	LoadMessages(ctx *gin.Context)
+	SeenMessages(ctx *gin.Context)
 	UploadAvatar(ctx *gin.Context)
 	FindUsers(ctx *gin.Context)
 	GetUser(ctx *gin.Context)
@@ -321,6 +322,34 @@ func (h *handler) LoadMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, messages)
+}
+
+func (h *handler) SeenMessages(c *gin.Context) {
+	var req dto.SeenMessagesReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	conversationID := c.Param("conversationId")
+	if conversationID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "conversationId is required"})
+		return
+	}
+	// Convert conversationID to uint
+	// Assuming they are valid uints for simplicity
+	conversationIDUint, err := strconv.ParseUint(conversationID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversationId"})
+		return
+	}
+
+	err = h.msgService.SeenMessages(c.Request.Context(), conversationIDUint, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "seen messages successfully"})
 }
 
 func (h *handler) UploadAvatar(c *gin.Context) {

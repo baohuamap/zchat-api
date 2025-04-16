@@ -8,6 +8,7 @@ type Conversation struct {
 	Type      ConversationType `gorm:"type:conversation_type;not null" json:"type"` // Enum: 'private', 'group'
 	CreatorID uint64           `gorm:"null" json:"creator_id"`
 	Creator   User             `gorm:"foreignKey:CreatorID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"creator"`
+	Seen      bool             `gorm:"default:false" json:"seen"`
 }
 
 type ConversationType string

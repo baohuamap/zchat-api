@@ -21,6 +21,7 @@ type ConversationRes struct {
 	Type                   models.ConversationType `json:"type"` // 1: private, 2: group
 	CreatorID              uint64                  `json:"creator_id"`
 	Participants           []uint64                `json:"participants"`
+	Seen                   bool                    `json:"seen"`
 	LatestMessageCreatedAt *time.Time              `json:"latest_message_created_at"`
 }
 
