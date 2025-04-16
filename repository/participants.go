@@ -69,10 +69,19 @@ func (r participant) Delete(ctx context.Context, id uint64) error {
 
 func (r participant) GetConversationByParticipants(ctx context.Context, userID uint64) ([]models.Conversation, error) {
 	var conversations []models.Conversation
-	err := r.DB.Table("participants").
-		Select("DISTINCT conversations.*").
+	stmt := r.DB.Table("participants").
+		Select("DISTINCT conversations.*, MAX(messages.created_at) AS last_message_time").
 		Joins("JOIN conversations ON participants.conversation_id = conversations.id").
+		Joins("LEFT JOIN messages ON messages.conversation_id = conversations.id").
 		Where("participants.user_id = ?", userID).
-		Find(&conversations).Error
-	return conversations, err
+		Group("conversations.id").
+		Order("last_message_time DESC").
+		Find(&conversations)
+
+	if len(conversations) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return conversations, stmt.Error
+	// return conversations, err
 }

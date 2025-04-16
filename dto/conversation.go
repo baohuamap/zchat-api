@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/baohuamap/zchat-api/models"
+import (
+	"time"
+
+	"github.com/baohuamap/zchat-api/models"
+)
 
 type CreateConversationReq struct {
 	Type         models.ConversationType `json:"type"` // 1: private, 2: group
@@ -13,10 +17,11 @@ type CreateConversationRes struct {
 }
 
 type ConversationRes struct {
-	ID           uint64                  `json:"id"`
-	Type         models.ConversationType `json:"type"` // 1: private, 2: group
-	CreatorID    uint64                  `json:"creator_id"`
-	Participants []uint64                `json:"participants"`
+	ID                     uint64                  `json:"id"`
+	Type                   models.ConversationType `json:"type"` // 1: private, 2: group
+	CreatorID              uint64                  `json:"creator_id"`
+	Participants           []uint64                `json:"participants"`
+	LatestMessageCreatedAt *time.Time              `json:"latest_message_created_at"`
 }
 
 type ConversationListRes struct {
