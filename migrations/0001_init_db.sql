@@ -86,3 +86,4 @@ DROP TABLE participants CASCADE;
 
 DROP TABLE messages CASCADE;
 
+DROP TYPE conversation_type CASCADE;
