@@ -369,8 +369,8 @@ func (s *service) FindUsers(c context.Context, search string) (*dto.FindUserList
 			FirstName: u.FirstName,
 			LastName:  u.LastName,
 			Avatar:    u.Avatar,
-			CreatedAt: u.CreatedAt.Format(time.RFC3339),
-			UpdatedAt: u.UpdatedAt.Format(time.RFC3339),
+			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
 		})
 	}
 

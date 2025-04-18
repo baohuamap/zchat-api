@@ -56,7 +56,7 @@ func (r user) GetByPhone(ctx context.Context, phone string) (*models.User, error
 
 func (r user) Search(ctx context.Context, search string) ([]models.User, error) {
 	var u []models.User
-	err := r.DB.Distinct("username", "email", "phone").Where("username LIKE ? OR email LIKE ? OR phone LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Find(&u).Error
+	err := r.DB.Where("username LIKE ? OR email LIKE ? OR phone LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Find(&u).Error
 	return u, err
 }
 
