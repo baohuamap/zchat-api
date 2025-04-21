@@ -389,13 +389,23 @@ func (h *handler) UploadAvatar(c *gin.Context) {
 }
 
 func (h *handler) FindUsers(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
+		return
+	}
 	search := c.Query("search")
 	if search == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "search is required"})
 		return
 	}
 
-	user, err := h.userService.FindUsers(c.Request.Context(), search)
+	user, err := h.userService.FindUsers(c.Request.Context(), userIDUint, search)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

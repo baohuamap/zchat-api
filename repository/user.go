@@ -12,6 +12,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	Get(ctx context.Context, id uint64) (*models.User, error)
 	Search(ctx context.Context, search string) ([]models.User, error)
+	SearchWithExclude(ctx context.Context, search string, excludeID uint64) ([]models.User, error)
 	SearchWithIDs(ctx context.Context, search string, ids []uint64) ([]models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	GetByPhone(ctx context.Context, phone string) (*models.User, error)
@@ -63,6 +64,12 @@ func (r user) Search(ctx context.Context, search string) ([]models.User, error) 
 func (r user) SearchWithIDs(ctx context.Context, search string, ids []uint64) ([]models.User, error) {
 	var u []models.User
 	err := r.DB.Where("id IN ?", ids).Where("username LIKE ? OR email LIKE ? OR phone LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Find(&u).Error
+	return u, err
+}
+
+func (r user) SearchWithExclude(ctx context.Context, search string, excludeID uint64) ([]models.User, error) {
+	var u []models.User
+	err := r.DB.Where("id != ?", excludeID).Where("username LIKE ? OR email LIKE ? OR phone LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Find(&u).Error
 	return u, err
 }
 

@@ -28,10 +28,10 @@ type User interface {
 	AcceptFriend(c context.Context, userID uint64, friendID uint64) error
 	RejectFriend(c context.Context, userID uint64, friendID uint64) error
 	GetSentFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
-	GetReceivedFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
+	GetReceivedFriendRequests(c context.Context, userID uint64) (*dto.ReceivedFriendRequestsRes, error)
 	GetFriends(c context.Context, userID uint64, search string) ([]models.User, error)
 	UploadAvatar(c context.Context, userID uint64, filename string, file *multipart.File) (*dto.UploadAvatarRes, error)
-	FindUsers(c context.Context, search string) (*dto.FindUserListRes, error)
+	FindUsers(c context.Context, userID uint64, search string) (*dto.FindUserListRes, error)
 	GetUser(c context.Context, userID uint64) (*dto.GetUserRes, error)
 }
 
@@ -245,7 +245,7 @@ func (s *service) GetSentFriendRequests(c context.Context, userID uint64) ([]mod
 	return requests, nil
 }
 
-func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error) {
+func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) (*dto.ReceivedFriendRequestsRes, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
@@ -261,14 +261,30 @@ func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) ([
 		return nil, err
 	}
 
-	var requests []models.Friendship
+	var requests dto.ReceivedFriendRequestsRes
 	for _, friendship := range friendships {
 		if friendship.Status == "pending" {
-			requests = append(requests, friendship)
+			friend, err := s.repo.Get(ctx, friendship.UserID)
+			if err != nil {
+				slog.Error("Error getting friend", "userID", userID)
+				return nil, err
+			}
+			requests.Requests = append(requests.Requests, dto.ReceivedFriendRequestResults{
+				ID:        strconv.FormatUint(friendship.ID, 10),
+				UserID:    strconv.FormatUint(friend.ID, 10),
+				Username:  friend.Username,
+				Email:     friend.Email,
+				Phone:     friend.Phone,
+				FirstName: friend.FirstName,
+				LastName:  friend.LastName,
+				Avatar:    friend.Avatar,
+				CreatedAt: friendship.CreatedAt,
+				Status:    friendship.Status,
+			})
 		}
 	}
 
-	return requests, nil
+	return &requests, nil
 }
 
 func (s *service) GetFriends(c context.Context, userID uint64, search string) ([]models.User, error) {
@@ -349,11 +365,11 @@ func (s *service) UploadAvatar(c context.Context, userID uint64, filename string
 	}, nil
 }
 
-func (s *service) FindUsers(c context.Context, search string) (*dto.FindUserListRes, error) {
+func (s *service) FindUsers(c context.Context, userID uint64, search string) (*dto.FindUserListRes, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
-	users, err := s.repo.Search(ctx, search)
+	users, err := s.repo.SearchWithExclude(ctx, search, userID)
 	if err != nil {
 		slog.Error("User not found", "search", search)
 		return &dto.FindUserListRes{}, err

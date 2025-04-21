@@ -3,14 +3,13 @@ package service
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/baohuamap/zchat-api/dto"
 	repo "github.com/baohuamap/zchat-api/repository"
 )
 
 type Message interface {
-	LoadConversations(c context.Context, userID uint64) (*dto.ConversationListRes, error)
+	LoadConversations(context context.Context, userID uint64) (*dto.ConversationListRes, error)
 	LoadMessages(c context.Context, conversationID uint64) (*dto.MessageListRes, error)
 	SeenMessages(c context.Context, conversationID uint64, req *dto.SeenMessagesReq) error
 }
@@ -29,8 +28,8 @@ func NewMessageService(convRepo repo.ConversationRepository, msgRepo repo.Messag
 	}
 }
 
-func (s *msgService) LoadConversations(c context.Context, userID uint64) (*dto.ConversationListRes, error) {
-	conversations, err := s.pRepo.GetConversationByParticipants(c, userID)
+func (s *msgService) LoadConversations(context context.Context, userID uint64) (*dto.ConversationListRes, error) {
+	conversations, err := s.pRepo.GetConversationByParticipants(context, userID)
 	if err != nil {
 		slog.Error("Failed to get conversations", "error", err)
 		return nil, err
@@ -38,34 +37,48 @@ func (s *msgService) LoadConversations(c context.Context, userID uint64) (*dto.C
 
 	var convRes dto.ConversationListRes
 	for _, conv := range conversations {
-		participants, err := s.pRepo.GetByConversationID(c, conv.ID)
+		participants, err := s.pRepo.GetByConversationID(context, conv.ID)
 		if err != nil {
 			slog.Error("Failed to get participants", "error", err)
 			return nil, err
 		}
-		participantIDs := make([]uint64, len(participants))
-		for i, p := range participants {
-			participantIDs[i] = p.UserID
+		var participantInfos []dto.ParticipantInfo
+		for _, p := range participants {
+			participantInfos = append(participantInfos, dto.ParticipantInfo{
+				ID:        p.UserID,
+				Phone:     p.User.Phone,
+				Username:  p.User.Username,
+				Avatar:    p.User.Avatar,
+				FirstName: p.User.FirstName,
+				LastName:  p.User.LastName,
+				Email:     p.User.Email,
+			})
 		}
-		latestMessage, err := s.mRepo.GetLatestByConversationID(c, conv.ID)
+
+		c := dto.ConversationRes{
+			ID:           conv.ID,
+			Name:         conv.Name,
+			Type:         string(conv.Type),
+			CreatorID:    conv.CreatorID,
+			Participants: participantInfos,
+			Seen:         conv.Seen,
+		}
+		latestMessage, err := s.mRepo.GetLatestByConversationID(context, conv.ID)
 		if err != nil && err.Error() != "NotFound" {
 			slog.Error("Failed to get latest message", "error", err)
 			return nil, err
 		}
+		if latestMessage != nil {
+			c.LatestMessageID = latestMessage.ID
+			c.LatestMessageSenderID = latestMessage.SenderID
+			c.LatestMessageContent = latestMessage.Content
+			c.LatestMessageCreatedAt = latestMessage.CreatedAt
+			c.LatestMessageSenderName = latestMessage.Sender.Username
+			c.LatestMessageSenderAvatar = latestMessage.Sender.Avatar
+		}
 
-		convRes.Conversations = append(convRes.Conversations, dto.ConversationRes{
-			ID:           conv.ID,
-			Type:         conv.Type,
-			CreatorID:    conv.CreatorID,
-			Participants: participantIDs,
-			Seen:         conv.Seen,
-			LatestMessageCreatedAt: func() *time.Time {
-				if latestMessage != nil {
-					return &latestMessage.CreatedAt
-				}
-				return nil
-			}(),
-		})
+		convRes.Conversations = append(convRes.Conversations, c)
+
 	}
 
 	return &convRes, nil

@@ -64,3 +64,20 @@ type GetUserRes struct {
 type UploadAvatarRes struct {
 	URL string `json:"url"`
 }
+
+type ReceivedFriendRequestResults struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Avatar    string    `json:"avatar"`
+	CreatedAt time.Time `json:"created_at"`
+	Status    string    `json:"status"` // 1: pending, 2: accepted, 3: rejected
+}
+
+type ReceivedFriendRequestsRes struct {
+	Requests []ReceivedFriendRequestResults `json:"requests"`
+}

@@ -15,7 +15,6 @@ import (
 type Handler interface {
 	CreateConversation(c *gin.Context)
 	JoinConversation(c *gin.Context)
-	// GetConversations(c *gin.Context)
 	GetClients(c *gin.Context)
 }
 
@@ -48,6 +47,7 @@ func (h *handler) CreateConversation(c *gin.Context) {
 	conv := &models.Conversation{
 		Type:      req.Type,
 		CreatorID: req.CreatorID,
+		Name:      req.Name,
 	}
 
 	if err := h.conv.Create(c, conv); err != nil {
@@ -76,7 +76,10 @@ func (h *handler) CreateConversation(c *gin.Context) {
 	}
 
 	res := &dto.CreateConversationRes{
-		ID: convID,
+		ID:        convID,
+		Type:      string(conv.Type),
+		CreatorID: conv.CreatorID,
+		Name:      conv.Name,
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -100,27 +103,6 @@ func (h *handler) JoinConversation(c *gin.Context) {
 	conversationID := c.Param("conversationId")
 	clientID := c.Query("userId")
 	username := c.Query("username")
-
-	// clientIDUint, err := strconv.ParseUint(clientID, 10, 64)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-	// 	return
-	// }
-
-	// convIDUint, err := strconv.ParseUint(conversationID, 10, 64)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid conversation ID"})
-	// 	return
-	// }
-
-	// participant := &models.Participant{
-	// 	UserID:         clientIDUint,
-	// 	ConversationID: convIDUint,
-	// }
-	// if err := h.participant.Create(c, participant); err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
 
 	cl := &Client{
 		Conn:            conn,

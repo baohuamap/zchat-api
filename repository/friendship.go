@@ -14,7 +14,7 @@ type FriendshipRepository interface {
 	GetByFriendID(ctx context.Context, friendID uint64) ([]models.Friendship, error)
 	GetByUserIDAndFriendID(ctx context.Context, userID, friendID uint64) (*models.Friendship, error)
 	Update(ctx context.Context, friendship *models.Friendship) error
-	Delete(ctx context.Context, id uint) error
+	Delete(ctx context.Context, id uint64) error
 }
 
 type friendship struct {
@@ -57,6 +57,6 @@ func (r friendship) Update(ctx context.Context, friendship *models.Friendship) e
 	return r.DB.Save(&friendship).Error
 }
 
-func (r friendship) Delete(ctx context.Context, id uint) error {
+func (r friendship) Delete(ctx context.Context, id uint64) error {
 	return r.DB.Delete(&models.Friendship{}, id).Error
 }

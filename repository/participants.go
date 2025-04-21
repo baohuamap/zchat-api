@@ -49,7 +49,7 @@ func (r participant) GetByUserID(ctx context.Context, userID uint64) ([]models.P
 
 func (r participant) GetByConversationID(ctx context.Context, conversationID uint64) ([]models.Participant, error) {
 	var participants []models.Participant
-	err := r.DB.Where("conversation_id = ?", conversationID).Find(&participants).Error
+	err := r.DB.Where("conversation_id = ?", conversationID).Preload("User").Find(&participants).Error
 	return participants, err
 }
 
@@ -70,11 +70,11 @@ func (r participant) Delete(ctx context.Context, id uint64) error {
 func (r participant) GetConversationByParticipants(ctx context.Context, userID uint64) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	stmt := r.DB.Table("participants").
-		Select("DISTINCT conversations.*, MAX(messages.created_at) AS last_message_time").
+		Select("conversations.id, conversations.name, conversations.created_at, MAX(messages.created_at) AS last_message_time").
 		Joins("JOIN conversations ON participants.conversation_id = conversations.id").
 		Joins("LEFT JOIN messages ON messages.conversation_id = conversations.id").
 		Where("participants.user_id = ?", userID).
-		Group("conversations.id").
+		Group("conversations.id, conversations.name, conversations.created_at").
 		Order("last_message_time DESC").
 		Find(&conversations)
 
@@ -83,5 +83,4 @@ func (r participant) GetConversationByParticipants(ctx context.Context, userID u
 	}
 
 	return conversations, stmt.Error
-	// return conversations, err
 }

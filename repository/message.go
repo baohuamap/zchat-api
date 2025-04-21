@@ -46,7 +46,7 @@ func (r message) GetByConversationID(ctx context.Context, conversationID uint64)
 
 func (r message) GetLatestByConversationID(ctx context.Context, conversationID uint64) (*models.Message, error) {
 	var message models.Message
-	err := r.DB.Where("conversation_id = ?", conversationID).Last(&message).Error
+	err := r.DB.Where("conversation_id = ?", conversationID).Preload("Sender").Last(&message).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, errors.New("NotFound")
