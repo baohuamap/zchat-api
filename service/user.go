@@ -27,7 +27,7 @@ type User interface {
 	CancelFriendRequest(c context.Context, userID uint64, friendID uint64) error
 	AcceptFriend(c context.Context, userID uint64, friendID uint64) error
 	RejectFriend(c context.Context, userID uint64, friendID uint64) error
-	GetSentFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error)
+	GetSentFriendRequests(c context.Context, userID uint64) (*dto.SentFriendRequestsRes, error)
 	GetReceivedFriendRequests(c context.Context, userID uint64) (*dto.ReceivedFriendRequestsRes, error)
 	GetFriends(c context.Context, userID uint64, search string) ([]models.User, error)
 	UploadAvatar(c context.Context, userID uint64, filename string, file *multipart.File) (*dto.UploadAvatarRes, error)
@@ -219,7 +219,7 @@ func (s *service) RejectFriend(c context.Context, userID uint64, friendID uint64
 	return s.friendshipRepo.Update(ctx, friendship)
 }
 
-func (s *service) GetSentFriendRequests(c context.Context, userID uint64) ([]models.Friendship, error) {
+func (s *service) GetSentFriendRequests(c context.Context, userID uint64) (*dto.SentFriendRequestsRes, error) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
@@ -235,14 +235,30 @@ func (s *service) GetSentFriendRequests(c context.Context, userID uint64) ([]mod
 		return nil, err
 	}
 
-	var requests []models.Friendship
+	var requests dto.SentFriendRequestsRes
 	for _, friendship := range friendships {
 		if friendship.Status == "pending" {
-			requests = append(requests, friendship)
+			friend, err := s.repo.Get(ctx, friendship.FriendID)
+			if err != nil {
+				slog.Error("Error getting friend", "userID", userID)
+				return nil, err
+			}
+			requests.Requests = append(requests.Requests, dto.FriendRequestResults{
+				ID:        strconv.FormatUint(friendship.ID, 10),
+				UserID:    strconv.FormatUint(friend.ID, 10),
+				Username:  friend.Username,
+				Email:     friend.Email,
+				Phone:     friend.Phone,
+				FirstName: friend.FirstName,
+				LastName:  friend.LastName,
+				Avatar:    friend.Avatar,
+				CreatedAt: friendship.CreatedAt,
+				Status:    friendship.Status,
+			})
 		}
 	}
 
-	return requests, nil
+	return &requests, nil
 }
 
 func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) (*dto.ReceivedFriendRequestsRes, error) {
@@ -269,7 +285,7 @@ func (s *service) GetReceivedFriendRequests(c context.Context, userID uint64) (*
 				slog.Error("Error getting friend", "userID", userID)
 				return nil, err
 			}
-			requests.Requests = append(requests.Requests, dto.ReceivedFriendRequestResults{
+			requests.Requests = append(requests.Requests, dto.FriendRequestResults{
 				ID:        strconv.FormatUint(friendship.ID, 10),
 				UserID:    strconv.FormatUint(friend.ID, 10),
 				Username:  friend.Username,

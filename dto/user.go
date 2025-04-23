@@ -65,7 +65,7 @@ type UploadAvatarRes struct {
 	URL string `json:"url"`
 }
 
-type ReceivedFriendRequestResults struct {
+type FriendRequestResults struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"user_id"`
 	Username  string    `json:"username"`
@@ -79,5 +79,9 @@ type ReceivedFriendRequestResults struct {
 }
 
 type ReceivedFriendRequestsRes struct {
-	Requests []ReceivedFriendRequestResults `json:"requests"`
+	Requests []FriendRequestResults `json:"requests"`
+}
+
+type SentFriendRequestsRes struct {
+	Requests []FriendRequestResults `json:"requests"`
 }
