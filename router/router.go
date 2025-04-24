@@ -34,7 +34,7 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.GET("/sentFriendRequests/:userId", httpHandler.GetSentFriendRequests)
 	r.GET("/receivedFriendRequests/:friendId", httpHandler.GetReceivedFriendRequests)
 
-	r.GET("converstations/:conversationId/messages", httpHandler.LoadMessages)
+	r.GET("/conversations/:conversationId/messages", httpHandler.LoadMessages)
 
 	r.POST("/conversations/:conversationId/addParticipants", httpHandler.AddParticipants)
 	// r.POST("/seenMessages/:conversationId", httpHandler.SeenMessages)
