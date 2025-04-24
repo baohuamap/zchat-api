@@ -27,6 +27,7 @@ type Handler interface {
 	UploadAvatar(ctx *gin.Context)
 	FindUsers(ctx *gin.Context)
 	GetUser(ctx *gin.Context)
+	AddParticipants(ctx *gin.Context)
 }
 
 type handler struct {
@@ -325,9 +326,16 @@ func (h *handler) LoadMessages(c *gin.Context) {
 }
 
 func (h *handler) SeenMessages(c *gin.Context) {
-	var req dto.SeenMessagesReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	// Convert userID to uint
+	// Assuming they are valid uints for simplicity
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid userId"})
 		return
 	}
 	conversationID := c.Param("conversationId")
@@ -343,7 +351,7 @@ func (h *handler) SeenMessages(c *gin.Context) {
 		return
 	}
 
-	err = h.msgService.SeenMessages(c.Request.Context(), conversationIDUint, &req)
+	err = h.msgService.SeenMessages(c.Request.Context(), conversationIDUint, userIDUint)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -435,4 +443,32 @@ func (h *handler) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *handler) AddParticipants(c *gin.Context) {
+	var req dto.AddParticipantsReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	conversationID := c.Param("conversationId")
+	if conversationID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "conversationId is required"})
+		return
+	}
+	// Convert conversationID to uint
+	// Assuming they are valid uints for simplicity
+	conversationIDUint, err := strconv.ParseUint(conversationID, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversationId"})
+		return
+	}
+
+	err = h.msgService.AddParticipants(c.Request.Context(), conversationIDUint, req.Participants)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "add participants successfully"})
 }

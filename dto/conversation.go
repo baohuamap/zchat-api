@@ -48,3 +48,7 @@ type ParticipantInfo struct {
 	Email     string `json:"email"`
 	Avatar    string `json:"avatar"`
 }
+
+type AddParticipantsReq struct {
+	Participants []uint64 `json:"participants"`
+}

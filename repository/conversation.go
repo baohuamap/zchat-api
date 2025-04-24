@@ -9,8 +9,8 @@ import (
 
 type ConversationRepository interface {
 	Create(ctx context.Context, conversation *models.Conversation) error
-	Get(ctx context.Context, id uint64) (models.Conversation, error)
-	Update(ctx context.Context, conversation models.Conversation) error
+	Get(ctx context.Context, id uint64) (*models.Conversation, error)
+	Update(ctx context.Context, conversation *models.Conversation) error
 	Delete(ctx context.Context, id uint64) error
 }
 
@@ -26,13 +26,13 @@ func (r conversation) Create(ctx context.Context, conversation *models.Conversat
 	return r.DB.Create(&conversation).Error
 }
 
-func (r conversation) Get(ctx context.Context, id uint64) (models.Conversation, error) {
+func (r conversation) Get(ctx context.Context, id uint64) (*models.Conversation, error) {
 	var c models.Conversation
 	err := r.DB.First(&c, id).Error
-	return c, err
+	return &c, err
 }
 
-func (r conversation) Update(ctx context.Context, conversation models.Conversation) error {
+func (r conversation) Update(ctx context.Context, conversation *models.Conversation) error {
 	return r.DB.Save(&conversation).Error
 }
 

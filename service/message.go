@@ -5,13 +5,15 @@ import (
 	"log/slog"
 
 	"github.com/baohuamap/zchat-api/dto"
+	"github.com/baohuamap/zchat-api/models"
 	repo "github.com/baohuamap/zchat-api/repository"
 )
 
 type Message interface {
 	LoadConversations(context context.Context, userID uint64) (*dto.ConversationListRes, error)
 	LoadMessages(c context.Context, conversationID uint64) (*dto.MessageListRes, error)
-	SeenMessages(c context.Context, conversationID uint64, req *dto.SeenMessagesReq) error
+	SeenMessages(c context.Context, conversationID uint64, userID uint64) error
+	AddParticipants(c context.Context, conversationID uint64, userIDs []uint64) error
 }
 
 type msgService struct {
@@ -103,7 +105,7 @@ func (s *msgService) LoadMessages(c context.Context, conversationID uint64) (*dt
 	return &msgRes, nil
 }
 
-func (s *msgService) SeenMessages(c context.Context, conversationID uint64, req *dto.SeenMessagesReq) error {
+func (s *msgService) SeenMessages(c context.Context, conversationID uint64, userID uint64) error {
 
 	// Check if the conversation exists
 	conversation, err := s.cRepo.Get(c, conversationID)
@@ -113,7 +115,7 @@ func (s *msgService) SeenMessages(c context.Context, conversationID uint64, req 
 	}
 
 	// Check if the user is a participant in the conversation
-	_, err = s.pRepo.GetByUserIDAndConversationID(c, req.UserID, conversationID)
+	_, err = s.pRepo.GetByUserIDAndConversationID(c, userID, conversationID)
 	if err != nil {
 		slog.Error("Failed to get participant", "error", err)
 		return err
@@ -132,8 +134,8 @@ func (s *msgService) SeenMessages(c context.Context, conversationID uint64, req 
 		return nil
 	}
 
-	if req.UserID == latestMessage.SenderID {
-		slog.Info("User is the sender of the latest message, no need to update seen status", "userID", req.UserID)
+	if userID == latestMessage.SenderID {
+		slog.Info("User is the sender of the latest message, no need to update seen status", "userID", userID)
 		return nil
 	}
 	// Update the seen status of the latest message for the participant
@@ -147,4 +149,36 @@ func (s *msgService) SeenMessages(c context.Context, conversationID uint64, req 
 
 	return nil
 
+}
+
+func (s *msgService) AddParticipants(c context.Context, conversationID uint64, userIDs []uint64) error {
+	// Check if the conversation exists
+	_, err := s.cRepo.Get(c, conversationID)
+	if err != nil {
+		slog.Error("Failed to get conversation", "error", err)
+		return err
+	}
+
+	participants := make([]models.Participant, 0)
+	for _, userID := range userIDs {
+		// Check if the user is already a participant
+		_, err := s.pRepo.GetByUserIDAndConversationID(c, userID, conversationID)
+		if err == nil {
+			slog.Info("User is already a participant", "userID", userID)
+			continue
+		}
+
+		participants = append(participants, models.Participant{
+			UserID:         userID,
+			ConversationID: conversationID,
+		})
+
+		err = s.pRepo.BulkCreate(c, participants)
+		if err != nil {
+			slog.Error("Failed to add participant", "error", err)
+			return err
+		}
+	}
+
+	return nil
 }

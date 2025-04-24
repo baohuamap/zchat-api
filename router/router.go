@@ -22,6 +22,10 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.GET("/user/:userId/findUsers", httpHandler.FindUsers)
 	r.GET("/user/:userId", httpHandler.GetUser)
 	r.POST("/user/:userId/uploadAvatar", httpHandler.UploadAvatar)
+	r.GET("user/:userId/friends", httpHandler.GetFriends)
+	r.GET("/user/:userId/conversations", httpHandler.LoadConversations)
+
+	r.POST("/user/:userId/converstations/:conversationId/seenMessages", httpHandler.SeenMessages)
 
 	r.POST("/addFriend/:userId/:friendId", httpHandler.AddFriend)
 	r.DELETE("/cancelFriendRequest/:userId/:friendId", httpHandler.CancelFriendRequest)
@@ -29,11 +33,11 @@ func SetupRoutes(r *gin.Engine, httpHandler http.Handler, wsHandler ws.Handler) 
 	r.PUT("/rejectFriend/:friendId/:userId", httpHandler.RejectFriend)
 	r.GET("/sentFriendRequests/:userId", httpHandler.GetSentFriendRequests)
 	r.GET("/receivedFriendRequests/:friendId", httpHandler.GetReceivedFriendRequests)
-	r.GET("user/:userId/friends", httpHandler.GetFriends)
 
-	r.GET("/user/:userId/conversations", httpHandler.LoadConversations)
-	r.GET("/messages/:conversationId", httpHandler.LoadMessages)
-	r.POST("/seenMessages/:conversationId", httpHandler.SeenMessages)
+	r.GET("converstations/:conversationId/messages", httpHandler.LoadMessages)
+
+	r.POST("/conversations/:conversationId/addParticipants", httpHandler.AddParticipants)
+	// r.POST("/seenMessages/:conversationId", httpHandler.SeenMessages)
 
 	// ws
 	r.POST("/ws/createConversation", wsHandler.CreateConversation)
