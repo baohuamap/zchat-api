@@ -58,12 +58,13 @@ func (s *msgService) LoadConversations(context context.Context, userID uint64) (
 		}
 
 		c := dto.ConversationRes{
-			ID:           conv.ID,
-			Name:         conv.Name,
-			Type:         string(conv.Type),
-			CreatorID:    conv.CreatorID,
-			Participants: participantInfos,
-			Seen:         conv.Seen,
+			ID:                     conv.ID,
+			Name:                   conv.Name,
+			Type:                   string(conv.Type),
+			CreatorID:              conv.CreatorID,
+			Participants:           participantInfos,
+			Seen:                   conv.Seen,
+			LatestMessageCreatedAt: conv.CreatedAt,
 		}
 		latestMessage, err := s.mRepo.GetLatestByConversationID(context, conv.ID)
 		if err != nil && err.Error() != "NotFound" {
