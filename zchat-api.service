@@ -1,0 +1,21 @@
+[Unit]
+Description=zchat-api
+After=network.target multi-user.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/zchat-api
+ExecStart=go run main.go
+Restart=always
+Environment=PG_HOST="localhost"
+Environment=PG_PORT=5432
+Environment=PG_NAME="postgres"
+Environment=PG_USER="postgres"
+Environment=PG_PASSWORD="postgres"
+Environment=PG_SSLMODE="disable"
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=zchat-api
+
+[Install]
+WantedBy=multi-user.target

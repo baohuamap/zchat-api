@@ -1,0 +1,15 @@
+[Unit]
+Description=zchat-fe
+After=network.target multi-user.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/chat.app.fe
+ExecStart=npm run start
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=zchat-fe
+
+[Install]
+WantedBy=multi-user.target
